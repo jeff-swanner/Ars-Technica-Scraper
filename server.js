@@ -4,7 +4,7 @@ var mongoose = require("mongoose");
 var axios = require("axios");
 var cheerio = require("cheerio");
 
-var PORT = 3000;
+var PORT = process.env.PORT || 3000;
 
 // Require all models
 var db = require("./models");
@@ -22,8 +22,9 @@ app.use(express.json());
 // Make public a static folder
 app.use(express.static("public"));
 
+var mongoDB_URI = process.env.MONGODB_URI || "mongodb://localhost/BBCdb";
 // Connect to the Mongo DB
-mongoose.connect("mongodb://localhost/BBCdb", { useNewUrlParser: true });
+mongoose.connect(mongoDB_URI, { useNewUrlParser: true });
 
 // When the server starts, create and save a new User document to the db
 // The "unique" rule in the User model's schema will prevent duplicate users from being added to the server
