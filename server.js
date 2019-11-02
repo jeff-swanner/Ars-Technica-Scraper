@@ -53,33 +53,34 @@ app.get("/notes", function(req, res) {
 
 // A GET route for scraping the echoJS website
 app.get("/scrape", function(req, res) {
+    var data = [];
     // First, we grab the body of the html with axios
-    axios.get("https://www.theonion.com/").then(function(response) {
+    axios.get("https://arstechnica.com/").then(function(response) {
       // Then, we load that into cheerio and save it to $ for a shorthand selector
       var $ = cheerio.load(response.data);
   
       // Now, we grab every h2 within an article tag, and do the following:
-      $(".curation-module__item__wrapper").each(function(i, element) {
+      $(".article").each(function(i, element) {
         // Save an empty result object
-        var result = {};
-  
-        // Add the text and href of every link, and save them as properties of the result object
-        result.title = $(this)
-            .children().find("h6").text();
-
-        result.img = $(this)
-            .children().find("img").attr("srcset");
-
-        result.link = $(this)
-            .children().find("a").attr("href");
         
-        if (result.title === "") {
-            result.title = $(this)
-          .children().find("h3").text();
-        }
-  
-          console.log(result.title);
-          console.log(result.link);
+        var result = {};
+        // Add the text and href of every link, and save them as properties of the result object
+        result.title = $(element)
+            .children().find("header h2 a").text();
+
+        result.link = $(element)
+            .children().find("header h2 a").attr("href");
+
+        result.excerpt = $(element)
+            .children().find('header p').text();
+        
+        result.image = $(element)
+            .children().find('figure div').attr('style').split("'")[1];
+
+
+        console.log(result.image);
+
+          data.push(result);
         // Create a new Article using the `result` object built from scraping
         // db.Article.create(result)
         //   .then(function(dbArticle) {
@@ -91,9 +92,9 @@ app.get("/scrape", function(req, res) {
         //     console.log(err);
         //   });
       });
-  
+      res.send(data);
       // Send a message to the client
-      res.send("Scrape Complete");
+      
     });
 });
 
