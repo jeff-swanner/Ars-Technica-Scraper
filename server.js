@@ -1,3 +1,4 @@
+// Requires necessary node modules
 var express = require("express");
 var logger = require("morgan");
 var mongoose = require("mongoose");
@@ -5,6 +6,7 @@ var axios = require("axios");
 var cheerio = require("cheerio");
 var moment = require('moment');
 
+// Sets port to either heroku env or 3000
 var PORT = process.env.PORT || 3000;
 
 // Require all models
@@ -29,41 +31,40 @@ mongoose.connect(mongoDB_URI, { useNewUrlParser: true });
 
 // When the server starts, create and save a new User document to the db
 // The "unique" rule in the User model's schema will prevent duplicate users from being added to the server
+// guest is the default user with options to expand and add login in future
 db.User.create({ name: "guest" })
-  .then(function(dbUser) {
-    console.log(dbUser);
-  })
-  .catch(function(err) {
-    console.log(err.message);
-  });
+.then(function(dbUser) {
+console.log(dbUser);
+})
+.catch(function(err) {
+console.log(err.message);
+});
+
 
 // Routes
 
-// Route for retrieving all Notes from the db
+// Route for retrieving all current articles from the db
 app.get("/currentArticles", function(req, res) {
-  // Find all Notes
-  db.Articles.find({current: true})
-    .sort({"_id":-1})
-    .populate('comment')
-    .then(function(dbNote) {
-        res.json(dbNote);
-
-        
-      // If all Notes are successfully found, send them back to the client
-    })
-    .catch(function(err) {
-      // If an error occurs, send the error back to the client
-      res.json(err);
-    });
+    // Find all articles with current set to true
+    db.Articles.find({current: true})
+        .sort({"_id":-1})
+        .populate('comment')
+        .then(function(dbArticles) {
+            res.json(dbArticles);
+        })
+        .catch(function(err) {
+        // If an error occurs, send the error back to the client
+        res.json(err);
+        });
 });
 
-// A GET route for scraping the echoJS website
+// A GET route for scraping the Ars Technica website
 app.get("/scrape", function(req, res) {
     var data = [];
+    // Sets all articles to not current
     db.Articles.updateMany({}, {$set: {'current': false}})
         .then(function(dbArticle) {
             // View the added result in the console
-            console.log(dbArticle);
         })
         .catch(function(err) {
             // If an error occurred, log it
@@ -74,12 +75,11 @@ app.get("/scrape", function(req, res) {
       // Then, we load that into cheerio and save it to $ for a shorthand selector
       var $ = cheerio.load(response.data);
   
-      // Now, we grab every h2 within an article tag, and do the following:
+      // Now, we grab every article class, and do the following:
       $(".article").each(function(i, element) {
         // Save an empty result object
         
         var result = {};
-        // Add the text and href of every link, and save them as properties of the result object
         result.title = $(element)
             .children().find("header h2 a").text();
 
@@ -97,9 +97,8 @@ app.get("/scrape", function(req, res) {
         db.Articles.create(result)
           .then(function(dbArticle) {
             // View the added result in the console
-            console.log(dbArticle);
-            res.send(dbArticle);
           })
+          // if error due to already existing the current is set to true. this way only articles currently displayed are shown on homepage
           .catch(function(err) {
             db.Articles.update({title: result.title},{$set: {'current': true}})
             .then(function(dbArticle) {
@@ -110,15 +109,14 @@ app.get("/scrape", function(req, res) {
             });            
           });
       });
-      res.send(data);
-      // Send a message to the client
-      
+      // Sends success back
+      res.send("Success");
     });
 });
 
-// Route for retrieving all Users from the db
+// Route for retrieving all saved articles and associatec comments
 app.get("/saved", function(req, res) {
-  // Find all Users
+  // Finds the guest user and populates the saved articles and comments
   db.User.find({name: 'guest'})
     .populate({
         path : 'articles',
@@ -126,9 +124,9 @@ app.get("/saved", function(req, res) {
           path : 'comment'
         }
     })
-    .then(function(dbUser) {
-      // If all Users are successfully found, send them back to the client
-      res.json(dbUser);
+    .then(function(data) {
+      // sends data back to client
+      res.json(data);
     })
     .catch(function(err) {
       // If an error occurs, send the error back to the client
@@ -136,16 +134,19 @@ app.get("/saved", function(req, res) {
     });
 });
 
+// Get route for sending timestamp of comments
 app.get("/timestamp/:id",function(req,res){
+    // Finds comment in database
     db.Comments.find({_id: req.params.id})
-    .then(function(com){
-        console.log(com[0]._id);
-        res.json(moment(com[0]._id.getTimestamp()).fromNow());
-    });
-    
+        .then(function(com){
+            // Uses moment to calculate how long ago comment was made
+            res.json(moment(com[0]._id.getTimestamp()).fromNow());
+        });
 });
 
+// Get route for deleting comments
 app.get("/deletecomment/:id",function(req,res){
+    // Removes comment from database based on id
     db.Comments.remove({_id: req.params.id},function(error,removed) {
       // Log any errors from mongojs
       if (error) {
@@ -161,8 +162,9 @@ app.get("/deletecomment/:id",function(req,res){
     })
 });
 
+// Get route for unsaving articles from user 
 app.post("/deletearticle/:id",function(req,res){
-    console.log(req.params.id);
+    // Removes article from user article array
     db.User.update({$pull: {articles: req.params.id}},function(error,removed) {
       // Log any errors from mongojs
       if (error) {
@@ -178,14 +180,13 @@ app.post("/deletearticle/:id",function(req,res){
     })
 });
 
-// Route for saving a new Note to the db and associating it with a User
+// Route for saving a new article to user 
 app.post("/saveArticle", function(req, res) {
-  // Create a new Note in the db
+  // Finds guest user and adds articles id to articles
   db.User.findOneAndUpdate({name:'guest'},{$addToSet: { articles: req.body.id }}, { new: true })
-    .then(function(dbUser) {
+    .then(function(data) {
       // If the User was updated successfully, send it back to the client
-      console.log(dbUser);
-      res.json(dbUser);
+      res.json(data);
     })
     .catch(function(err) {
       // If an error occurs, send it back to the client
@@ -193,28 +194,30 @@ app.post("/saveArticle", function(req, res) {
     });
 });
 
+// Route for creating a new comment
 app.post("/articles/:id", function(req, res) {
-    // Create a new note and pass the req.body to the entry
+    // Create a new comment and pass the req.body to the entry
+    // Sets username as guest
     req.body.username = 'guest';
-    db.Comments.create(req.body)
-      .then(function(dbComment) {
-        res.json(dbComment);
-        // If a Note was created successfully, find one Article with an `_id` equal to `req.params.id`. Update the Article to be associated with the new Note
-        // { new: true } tells the query that we want it to return the updated User -- it returns the original by default
-        // Since our mongoose query returns a promise, we can chain another `.then` which receives the result of the query
-        return db.Articles.findOneAndUpdate({ _id: req.params.id }, {$push: { comment: dbComment._id }}, { new: true });
-      })
-      .then(function(dbArticle) {
-        // If we were able to successfully update an Article, send it back to the client
-        
-      })
-      .catch(function(err) {
-        // If an error occurred, send it to the client
-        res.json(err);
-      });
-  });
 
-// Route to get all User's and populate them with their notes
+    // Adds comment to database
+    db.Comments.create(req.body)
+        .then(function(dbComment) {
+            // Sends comment back on success
+            res.json(dbComment);
+            // If a comment was created successfully, find one Article with an `_id` equal to `req.params.id`. Update the Article to be associated with the new comment
+            // { new: true } tells the query that we want it to return the updated User -- it returns the original by default
+            // Since our mongoose query returns a promise, we can chain another `.then` which receives the result of the query
+            return db.Articles.findOneAndUpdate({ _id: req.params.id }, {$push: { comment: dbComment._id }}, { new: true });
+        })
+        .then(function(dbArticle) {
+        // If we were able to successfully update an Article
+        })
+        .catch(function(err) {
+            // If an error occurred, send it to the client
+            res.json(err);
+        });
+});
 
 // Start the server
 app.listen(PORT, function() {
