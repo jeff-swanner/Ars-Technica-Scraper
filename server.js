@@ -165,7 +165,7 @@ app.get("/deletecomment/:id",function(req,res){
 // Get route for unsaving articles from user 
 app.post("/deletearticle/:id",function(req,res){
     // Removes article from user article array
-    db.User.update({$pull: {articles: req.params.id}},function(error,removed) {
+    db.User.update({name: 'guest'},{$pull: {articles: req.params.id}},function(error,removed) {
       // Log any errors from mongojs
       if (error) {
         console.log(error);
