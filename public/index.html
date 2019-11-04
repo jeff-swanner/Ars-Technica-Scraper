@@ -7,34 +7,152 @@
     <title>Ars Technica Scraper</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="app.js"></script>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="navbar-brand">Ars Technica Scraper</div>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+            <li class="nav-item active" id='homeButton'>
+              <a class="nav-link" href="./">Home <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item" id='savedArticlesButton'>
+              <a class="nav-link" href="#" onclick="return savedArticles();">Saved Articles</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Profile</a>
             </li>
           </ul>
           <form class="form-inline my-2 my-lg-0">
-            <button class="btn btn-outline-light my-2 my-sm-0" type="submit">Login</button>
+            <button class="btn btn-outline-light my-2 my-sm-0" type="button" id='scrape'>Scrape</button>
           </form>
         </div>
     </nav>
-    <div class='container mt-3'>
+    <div class='container'>
         <header><h3>Today's Top Articles</h3></header>
         <div class='row' id="articles">
         </div>
     </div>
+    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Login</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+              <form>
+                <div class="form-group">
+                  <label for="userNameInput">Username</label>
+                  <input type="text" class="form-control" id="userNameInput" placeholder="Enter Username">
+                </div>
+                <div class="form-group">
+                  <label for="passwordInput">Password</label>
+                  <input type="password" class="form-control" id="passwordInput" placeholder="Password">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div href="#bottom"></div>
 </body>
+<script>
+  function savedArticles() {
+    console.log('test');
+    $('#savedArticlesButton').addClass('active');
+    $('#homeButton').removeClass('active');
+    $.getJSON('./saved',function(result){
+            $('#articles').empty();
+            // console.log(data[0].articles);
+            var data = result[0].articles
+            data.forEach(function(article, i){
+                
+
+                var card = $('<div>').addClass('card text-black border-info bg-light mb-3');
+                var body = $('<div>').addClass('card-body');
+                var image = $('<img>').attr('src',article.image);
+                image.addClass('img-fluid mb-2');
+                image.attr('style','width: 100%;')
+                var title = $('<h5>').addClass('card-header').text(article.title);
+                var link = $('<a>').attr('href',article.link).append(title);
+                link.addClass('text-dark')
+    
+                var button = $('<a>').text('View Article');
+                button.attr('role','button');
+                button.addClass('btn btn-danger mr-3 mb-3');
+                button.attr('href',article.link);
+    
+                var excerpt = $('<p>').text(article.excerpt);
+                var unsaveButton = $('<button>').text('Remove');
+                unsaveButton.addClass("btn btn-danger mr-3 mb-3 unsaveButton");
+                unsaveButton.attr('data-id',article._id);
+                unsaveButton.attr('data-card','articleCard'+i);
+
+    
+                var noteButton = $('<button>').text('View Comments');
+                noteButton.addClass("btn btn-secondary mr-3 mb-3 noteButton");
+                noteButton.attr('data-toggle','collapse');
+                var dataTarget = '#footer'+i;
+                noteButton.attr('data-target',dataTarget);
+                noteButton.attr('data-card','articleCard'+i);
+    
+    
+                var comments = $('<div>');
+                comments.addClass('collapse card-footer');
+                comments.attr('id','footer'+i);
+    
+                if(article.comment.length > 0){
+                    article.comment.forEach(function(com){
+                        var timeStamp;
+                        $.getJSON('./timestamp/'+com._id,function(time){
+                            timeStamp = time;
+                            var comment = `
+                            <div class='card card-body'id='${com._id}'>
+                                <div class="float-right">
+                                    <button type="button" class="deleteComment close" data-id="${com._id}">
+                                        &times;
+                                    </button>
+                                </div>
+                                <div class='d-inline'>${com.username}</div>
+                                <div class='text-secondary d-inline'>${timeStamp}</div>
+                                <p>${com.body}</p>
+                                
+                            </div>`;
+                            comments.append(comment);
+                        })
+                        
+                    });
+                };
+                var newComment = $('<div>').addClass('form-group mt-2');
+                newComment.html(`<label for="exampleFormControlTextarea1">Share your thoughts</label>
+                <textarea class="form-control" id='comment`+i+`' rows="3"></textarea>
+                <button class="btn btn-primary mt-3 postComment" data-footer='footer${i}' data-articleid='`+article._id+`' data-id='comment`+i+`'>Post</button>`)
+    
+                comments.append(newComment);
+    
+                body.append(image, excerpt, unsaveButton, noteButton);
+                card.append(link, body, comments);
+    
+                var column = $('<div>').addClass('col-lg-4 articleCard'+i);
+                column.append(card)
+                $('#articles').append(column);
+            })
+        });
+  };
+</script>
 </html>
