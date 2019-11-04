@@ -2,7 +2,7 @@
 
 ## Description
 
-This application is a web scraper that grabs articles from Ars Technica and allows users to comment on and save articles for future reference. It uses Node.js, express, Mongoose, Cheerio, Axios, Morgan, and Moment.
+This application is a web scraper that grabs articles from Ars Technica and allows users to comment on and save articles for future reference. MongoDB populate functions are used to relate the articles, users, and comments collections. It uses Node.js, Express, Mongoose, Cheerio, Axios, Morgan, Bootstrap, Heroku, and Moment. A working version is deployed to heroku and be found at the bottom of the readme. 
 
 ## How To Use
 1. Download the github repository to your computer. 
@@ -13,12 +13,13 @@ This application is a web scraper that grabs articles from Ars Technica and allo
 
 ## Technologies Used
 * Node.js - Used for core application
-* MongoDB/Mongoose - Used to store database information
+* MongoDB/Mongoose - Used to create schema and store database information
 * Express - Used to create server and handle get/post request from the client
 * Heroku - Used to deploy application to web
 * Morgan - Http request middleware logger
 * Axios - Used for grabbing HTML body when scraping Ars Technica
 * Cheerio - Used for scraping HTML data returned from Axios
+* Moment - For displaying time from now when comments were made
 * Bootstrap - Used for front end styling
 
 ## Deployed Heroku App
