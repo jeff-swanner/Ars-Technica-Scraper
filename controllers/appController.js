@@ -82,19 +82,29 @@ router.get("/", function(req, res) {
         .then(function(dbArticles) {
             // function that accepts callback and adds timestamp and saved article to object before sending to handlebars
             function timeCreate(_callback) {
-                i=0;
+                let i=0;
                 dbArticles.forEach(function(article){
                     db.User.find({name: 'guest'}).then(function(userData){
+                        article.saved = userData[0].articles.includes(article._id);
+                        let j = 0;
                         article.comment.forEach(function(com){
                             db.Comments.find({_id: com._id})
                             .then(function(com2){
                                 com.timeStamp = moment(com2[0]._id.getTimestamp()).fromNow();
+                                j++;
+                                if (j===article.comment.length){
+                                    i++;
+                                };
+                                if(i===dbArticles.length){
+                                    _callback();
+                                };
                             });
                         });
-                        article.saved = userData[0].articles.includes(article._id);
-                        i++;
-                        if(i==dbArticles.length){
-                            _callback();
+                        if(article.comment.length===0){
+                            i++;
+                            if(i===dbArticles.length){
+                                _callback();
+                            };
                         };
                     });
                     
@@ -128,15 +138,29 @@ router.get("/saved", function(req, res) {
         // sends data back to client
         
         function timeCreate(_callback) {
+            let i = 0;
             data[0].articles.forEach(function(article){
+                let j = 0;
                 article.comment.forEach(function(com){
                     db.Comments.find({_id: com._id})
                     .then(function(com2){
                         com.timeStamp = moment(com2[0]._id.getTimestamp()).fromNow();
+                        j++;
+                        if (j===article.comment.length){
+                            i++;
+                        };
+                        if(i===data[0].articles.length){
+                            _callback();
+                        };
                     });
-                })
+                });
+                if(article.comment.length===0){
+                    i++;
+                    if(i===data[0].articles.length){
+                        _callback();
+                    };
+                };
             });
-            _callback();
         };
         function render() {
             var object = {
