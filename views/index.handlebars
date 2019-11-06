@@ -1,0 +1,67 @@
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="navbar-brand">Ars Technica Scraper</div>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item active" id='homeButton'>
+              <a class="nav-link" href="./">Home <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item" id='savedArticlesButton'>
+              <a class="nav-link" href="./saved">Saved Articles</a>
+            </li>
+            <li class="nav-item">
+            </li>
+          </ul>
+          <form class="form-inline my-2 my-lg-0">
+            <button class="btn btn-outline-light my-2 my-sm-0" type="button" id='scrape'>Scrape</button>
+          </form>
+        </div>
+    </nav>
+    <div class='container'>
+        <div class='row' id="articles">
+            {{#each articles}}
+                <div class="col-lg-4 articleCard{{@index}}">
+                    <div class="card text-black border-info bg-light mb-3 {{_id}}">
+                        <a href="{{link}}" class="text-danger">
+                            <h5 class="card-header">{{title}}</h5>
+                        </a>
+                        <div class="card-body">
+                            <img src="{{image}}" class="img-fluid mb-2" style="width: 100%;">
+                            <p>{{excerpt}}</p>
+                            {{#if saved}}
+                                <button class="btn btn-warning disabled mr-3 mb-3" data-id="{{_id}}">Saved</button>
+                            {{else}}
+                                <button class="btn btn-primary mr-3 mb-3 saveButton" data-id="{{_id}}">Save Article</button>
+                            {{/if}}
+                            
+                            <button class="btn btn-secondary mr-3 mb-3 noteButton" data-toggle="collapse" data-target="#footer{{@index}}" data-card="articleCard{{@index}}">View Comments</button>
+                        </div>
+                        <div class="collapse card-footer" id="footer{{@index}}">
+                            <div class="form-group mt-2">
+                                <label for="exampleFormControlTextarea1">Share your thoughts</label>
+                                <textarea class="form-control" id="comment{{@index}}" rows="3"></textarea>
+                                <button class="btn btn-primary mt-3 postComment" data-footer="footer{{@index}}" data-articleid="{{_id}}" data-id="comment{{@index}}">Post</button>
+                            </div>
+                            {{#each comment}}
+                                <div class='card card-body'id='{{_id}}'>
+                                    <div class="float-right">
+                                        <button type="button" class="deleteComment close" data-id="{{_id}}">
+                                            &times;
+                                        </button>
+                                    </div>
+                                    <div class='d-inline'>{{username}}</div>
+                                    <div class='text-secondary d-inline'>{{timeStamp}}</div>
+                                    <p>{{body}}</p>
+                                </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+    </div>
+    <div href="#bottom"></div>
+</body>
